@@ -1,8 +1,16 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import {
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+} from 'react-native';
 import logo from './assets/logo.png';
 import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
+import uploadToAnonymousFilesAsync from 'anonymous-files';
 
 export default function App() {
   const [selectedImage, setSelectedImage] = React.useState(null);
@@ -17,15 +25,22 @@ export default function App() {
       return;
     }
 
-    setSelectedImage({ localUri: pickerResult.uri });
+    if (Platform.OS === 'web') {
+      let remoteUri = await uploadToAnonymousFilesAsync(pickerResult.uri);
+      setSelectedImage({ localUri: pickerResult.uri, remoteUri });
+    } else {
+      setSelectedImage({ localUri: pickerResult.uri, remoteUri: null });
+    }
   };
 
   let openShareDialogAsync = async () => {
     if (!(await Sharing.isAvailableAsync())) {
-      alert('Ruh, Roh, sharing isnt available on your platform');
+      alert(
+        `The image is available for sharing at: ${selectedImage.remoteUri}`
+      );
       return;
     }
-    Sharing.shareAsync(sleectedImage.localUri);
+    Sharing.shareAsync(selectedImage.remoteUri || selectedImage.localUri);
   };
 
   if (selectedImage !== null) {
@@ -67,6 +82,10 @@ const styles = StyleSheet.create({
     width: 305,
     height: 159,
     marginBottom: 10,
+  },
+  splash: {
+    resizeMode: 'contain',
+    backgroundColor: '#000000',
   },
   instructions: {
     color: '#888',
