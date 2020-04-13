@@ -2,8 +2,10 @@ import React from 'react';
 import { Image, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import logo from './assets/logo.png';
 import * as ImagePicker from 'expo-image-picker';
+import * as Sharing from 'expo-sharing';
 
 export default function App() {
+  const [selectedImage, setSelectedImage] = React.useState(null);
   let openImagePickerAsync = async () => {
     let permissionResult = await ImagePicker.requestCameraRollPermissionsAsync();
     if (permissionResult.granted === false) {
@@ -11,8 +13,34 @@ export default function App() {
       return;
     }
     let pickerResult = await ImagePicker.launchImageLibraryAsync();
-    console.log(pickerResult);
+    if (pickerResult.cancelled === true) {
+      return;
+    }
+
+    setSelectedImage({ localUri: pickerResult.uri });
   };
+
+  let openShareDialogAsync = async () => {
+    if (!(await Sharing.isAvailableAsync())) {
+      alert('Ruh, Roh, sharing isnt available on your platform');
+      return;
+    }
+    Sharing.shareAsync(sleectedImage.localUri);
+  };
+
+  if (selectedImage !== null) {
+    return (
+      <View style={styles.container}>
+        <Image
+          source={{ uri: selectedImage.localUri }}
+          style={styles.thumbnail}
+        />
+        <TouchableOpacity onPress={openShareDialogAsync} style={styles.button}>
+          <Text style={styles.buttonText}>Share this photo</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
       <Image source={logo} style={styles.logo} />
@@ -53,5 +81,10 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 20,
     color: '#fff',
+  },
+  thumbnail: {
+    width: 300,
+    height: 300,
+    resizeMode: 'contain',
   },
 });
